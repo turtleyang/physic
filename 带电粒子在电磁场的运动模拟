@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+‘’‘本程序为2022年秋等离子体物理学老师布置的小组作业，
+利用sympy,matplotlib,numpy对带电粒子在电磁场中的运动
+进行模拟’‘’
+
+
+from sympy import *
+import numpy as np
+from matplotlib import pyplot as plt
+
+init_printing()
+
+x, y, z = symbols('x y z', real=True, nonzero=True, positive=True, cls=Function)
+q, m, b, e, t = symbols('q m b e t', real=True, positive=True)
+eq = [Eq(x(t).diff(t, 2), q * b * y(t).diff(t, 1) / m),
+      Eq(y(t).diff(t, 2), e * q - b * x(t).diff(t, 1)),
+      Eq(z(t).diff(t, 2), 0)]
+sol = dsolve(eq)
+
+x = trigsimp(sol[0].rhs)
+y = trigsimp(sol[1].rhs)
+z = trigsimp(sol[2].rhs)
+
+var('C1 C2 C3 C4 C5 C6')
+# x(0)=0 x'(0)=0
+eq1 = Eq(x.subs({t: 0}), 0)
+eq2 = Eq(x.diff(t, 1).subs({t: 0}), 0)
+# y(0)=0 y'(0)=0
+eq3 = Eq(y.subs({t: 0}), 0)
+eq4 = Eq(y.diff(t, 1).subs({t: 0}), 1)
+# z(0)=0 z'(0)=1
+eq5 = Eq(z.subs({t: 0}), 0)
+eq6 = Eq(z.diff(t, 1).subs({t: 0}), 1)
+# 求系数
+l = solve([eq1, eq2, eq3, eq4, eq5, eq6], [C1, C2, C3, C4, C5, C6])
+x = x.subs(l)
+y = y.subs(l)
+z = z.subs(l)
+
+# 画图
+ts = np.linspace(0, 100, 1000)
+consts = {q: 0.016, b: 1, m: 0.02, e: 0.1}
+fx = lambdify(t, x.subs(consts), 'numpy')
+fy = lambdify(t, y.subs(consts), 'numpy')
+fz = lambdify(t, z.subs(consts), 'numpy')
+fx = np.array(fx(ts))
+fy = np.array(fy(ts))
+fz = np.array(fz(ts))
+
+ax = plt.figure().add_subplot(projection='3d')
+ax.plot(fx, fy, fz, label='parametric curve')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.clabel('z')
+ax.legend()
+
+plt.show()
